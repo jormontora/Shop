@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Produkt | Bringy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#111014;--panel:#f5f4ee;--paper:#fff;--steel:#6b6e76;--flare:#ff2f6e;--line:rgba(17,16,20,.14)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 'Space Grotesk',system-ui,sans-serif;background-image:repeating-linear-gradient(0deg,rgba(17,16,20,.025) 0 1px,transparent 1px 3px)}
+.wrap{max-width:1080px;margin:auto;padding:24px 20px 64px}
+.top{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--ink);padding:12px 0 20px}
+.logo{font:2rem 'Archivo Black',system-ui,sans-serif;text-decoration:none;color:var(--ink);text-transform:uppercase}
+.logo span{color:var(--flare)}
+.back{color:var(--ink);font-weight:700;text-decoration:none}
+.back:hover{color:var(--flare)}
+.product{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:clamp(28px,6vw,76px);align-items:center;padding:44px 0}
+.msg{grid-column:1/-1;color:var(--steel);padding:60px 0;font-size:1.1rem}
+.photo{position:relative;background:var(--panel);border:1px solid var(--line);aspect-ratio:1;display:grid;place-items:center;overflow:hidden}
+.photo:before{content:"";position:absolute;z-index:1;top:12px;left:22px;width:64px;height:18px;background:repeating-linear-gradient(45deg,rgba(17,16,20,.16) 0 2px,rgba(17,16,20,.05) 2px 6px);transform:rotate(-4deg)}
+.photo img{width:100%;height:100%;object-fit:cover}
+.placeholder{font:7rem 'Archivo Black',sans-serif;color:rgba(17,16,20,.25)}
+.brand{margin:0 0 10px;color:var(--steel);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em}
+h1{margin:0;font:clamp(2.2rem,5vw,4.5rem)/.98 'Archivo Black',system-ui,sans-serif;text-transform:uppercase;overflow-wrap:anywhere}
+.price{display:inline-block;margin:24px 0 12px;padding:6px 14px;background:var(--flare);color:#fff;font-size:1.4rem;font-weight:700;transform:rotate(-1deg)}
+.stock{display:table;border:1px solid #27845e;color:#176441;padding:4px 10px;font-size:.8rem;text-transform:uppercase}
+.stock.out{border-color:var(--steel);color:var(--steel)}
+dl{margin:28px 0 0;border-top:1px solid var(--line)}
+dl div{display:grid;grid-template-columns:100px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+dt{color:var(--steel)} dd{margin:0;font-weight:700;overflow-wrap:anywhere}
+@media(max-width:700px){.wrap{padding-top:12px}.product{grid-template-columns:1fr;gap:28px;padding-top:28px}.photo{max-height:70vh}.top{align-items:flex-start;gap:16px;flex-wrap:wrap}}
+</style>
+</head>
+<body><div class="wrap">
+<nav class="top"><a class="logo" href="index.html">Bring<span>y</span></a><a class="back" href="index.html">← Všetky modely</a></nav>
+<main class="product" id="product"><p class="msg">Načítavame…</p></main>
+</div>
+<script>
+const API = 'https://bringy-api-896645809822.europe-west3.run.app';
+const main = document.getElementById('product');
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const fail = text => main.replaceChildren(el('p', 'msg', text));
+
+function show(p) {
+  document.title = `${p.name} | Bringy`;
+  const photo = el('div', 'photo');
+  if (p.image) {
+    const img = new Image(); img.alt = p.name; img.src = String(p.image).replace(/\\/g, '/');
+    photo.append(img);
+  } else photo.append(el('div', 'placeholder', String(p.name).charAt(0) || 'B'));
+  const info = el('section');
+  if (p.brand) info.append(el('p', 'brand', p.brand));
+  info.append(el('h1', null, p.name));
+  if (p.price != null) info.append(el('p', 'price', Number(p.price).toLocaleString('sk-SK') + ' €'));
+  if (p.available != null) info.append(p.available ? el('span', 'stock', 'Na sklade') : el('span', 'stock out', 'Vypredané'));
+  const dl = el('dl');
+  for (const [label, value] of [['Farba', p.color], ['Veľkosti', p.sizes]]) {
+    if (!value) continue;
+    const row = el('div'); row.append(el('dt', null, label), el('dd', null, value)); dl.append(row);
+  }
+  info.append(dl);
+  main.replaceChildren(photo, info);
+}
+
+const id = new URLSearchParams(location.search).get('id');
+if (!id) fail('Model sa nenašiel.');
+else fetch(`${API}/products/${encodeURIComponent(id)}`)
+  .then(r => { if (!r.ok) throw r.status; return r.json(); })
+  .then(show)
+  .catch(err => fail(err === 404 ? 'Model sa nenašiel.' : 'Model sa nepodarilo načítať. Skúste to o chvíľu.'));
+</script>
+</body>
+</html>
